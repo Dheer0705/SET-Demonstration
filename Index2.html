@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Electronic Transaction (SET) Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Serif+Display&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --c-bg: #0a0e1a;
+            --c-card: #111827;
+            --c-border: #1e2d4a;
+            --c-blue: #3b82f6;
+            --c-green: #10b981;
+            --c-amber: #f59e0b;
+            --c-red: #ef4444;
+            --c-purple: #8b5cf6;
+            --c-teal: #06b6d4;
+            --c-text: #e2e8f0;
+            --c-muted: #64748b;
+            --c-dim: #1e293b;
+        }
+
+        body {
+            background: var(--c-bg);
+            color: var(--c-text);
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+            min-height: 100vh
+        }
+
+        h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 28px;
+            font-weight: 400;
+            letter-spacing: .5px;
+            color: #fff
+        }
+
+        .app {
+            padding: 2rem 1.5rem;
+            max-width: 960px;
+            margin: 0 auto
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem
+        }
+
+        .subtitle {
+            color: var(--c-muted);
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 6px
+        }
+
+        .parties {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            align-items: start
+        }
+
+        .party {
+            background: var(--c-card);
+            border: 1px solid var(--c-border);
+            border-radius: 10px;
+            padding: 14px 8px;
+            text-align: center;
+            transition: border-color .3s, box-shadow .3s
+        }
+
+        .party.active {
+            border-color: var(--c-blue);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, .2)
+        }
+
+        .party-icon {
+            font-size: 22px;
+            margin-bottom: 6px
+        }
+
+        .party-name {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .5px;
+            color: #fff
+        }
+
+        .party-role {
+            font-size: 10px;
+            color: var(--c-muted);
+            margin-top: 2px;
+            line-height: 1.3
+        }
+
+        .cert-badge {
+            display: inline-block;
+            margin-top: 6px;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(16, 185, 129, .15);
+            color: var(--c-green);
+            border: 1px solid rgba(16, 185, 129, .3)
+        }
+
+        .steps {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 1.5rem
+        }
+
+        .step {
+            background: var(--c-card);
+            border: 1px solid var(--c-border);
+            border-radius: 10px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all .25s
+        }
+
+        .step:hover {
+            border-color: var(--c-blue)
+        }
+
+        .step.active {
+            border-color: var(--c-blue);
+            background: #0f1d35
+        }
+
+        .step.done {
+            border-color: rgba(16, 185, 129, .4);
+            background: rgba(16, 185, 129, .04)
+        }
+
+        .step.done .step-num {
+            background: var(--c-green);
+            border-color: var(--c-green);
+            color: #fff
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .step-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 1.5px solid var(--c-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+            transition: all .3s;
+            color: var(--c-muted)
+        }
+
+        .step.active .step-num {
+            border-color: var(--c-blue);
+            color: var(--c-blue)
+        }
+
+        .step-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: .3px
+        }
+
+        .step-desc {
+            font-size: 11px;
+            color: var(--c-muted);
+            margin-top: 2px
+        }
+
+        .step-detail {
+            margin-top: 12px;
+            display: none
+        }
+
+        .step.active .step-detail {
+            display: block
+        }
+
+        .packet {
+            background: var(--c-dim);
+            border: 1px solid var(--c-border);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            font-size: 11px;
+            line-height: 1.7
+        }
+
+        .packet-label {
+            font-size: 9px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--c-muted);
+            margin-bottom: 4px
+        }
+
+        .field {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            flex-wrap: wrap
+        }
+
+        .key {
+            color: var(--c-muted);
+            min-width: 120px;
+            flex-shrink: 0
+        }
+
+        .val {
+            color: var(--c-text)
+        }
+
+        .val.enc {
+            color: var(--c-amber);
+            font-size: 10px;
+            word-break: break-all
+        }
+
+        .val.hash {
+            color: var(--c-purple);
+            font-size: 10px;
+            word-break: break-all
+        }
+
+        .val.green {
+            color: var(--c-green)
+        }
+
+        .val.blue {
+            color: var(--c-blue)
+        }
+
+        .val.red {
+            color: var(--c-red)
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap
+        }
+
+        button {
+            padding: 9px 18px;
+            border-radius: 6px;
+            border: 1px solid var(--c-border);
+            background: transparent;
+            color: var(--c-text);
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all .2s;
+            letter-spacing: .5px
+        }
+
+        button:hover {
+            border-color: var(--c-blue);
+            color: var(--c-blue)
+        }
+
+        button.primary {
+            background: var(--c-blue);
+            border-color: var(--c-blue);
+            color: #fff
+        }
+
+        button.primary:hover {
+            background: #2563eb
+        }
+
+        button:disabled {
+            opacity: .4;
+            cursor: default
+        }
+
+        .log {
+            background: var(--c-card);
+            border: 1px solid var(--c-border);
+            border-radius: 10px;
+            padding: 12px;
+            max-height: 160px;
+            overflow-y: auto
+        }
+
+        .log-title {
+            font-size: 9px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--c-muted);
+            margin-bottom: 8px
+        }
+
+        .log-entry {
+            font-size: 10px;
+            line-height: 1.8;
+            border-left: 2px solid var(--c-border);
+            padding-left: 8px;
+            margin-bottom: 4px
+        }
+
+        .log-entry.info {
+            border-color: var(--c-blue);
+            color: #93c5fd
+        }
+
+        .log-entry.success {
+            border-color: var(--c-green);
+            color: #6ee7b7
+        }
+
+        .progress {
+            height: 3px;
+            background: var(--c-border);
+            border-radius: 2px;
+            margin-bottom: 1.5rem;
+            overflow: hidden
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--c-blue), var(--c-teal));
+            border-radius: 2px;
+            transition: width .5s
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: 9px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-right: 4px;
+            font-weight: 700;
+            letter-spacing: .5px
+        }
+
+        .tag-enc {
+            background: rgba(245, 158, 11, .15);
+            color: var(--c-amber);
+            border: 1px solid rgba(245, 158, 11, .3)
+        }
+
+        .legend {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            font-size: 10px
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--c-muted)
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>Secure Electronic Transaction</h1>
+            <div class="subtitle">SET Protocol · Payment Card Industry · End-to-End Demo</div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#f59e0b"></div>Encrypted
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#8b5cf6"></div>Hashed
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#10b981"></div>Digitally Signed
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#3b82f6"></div>Certificate
+            </div>
+        </div>
+
+        <div class="parties" id="parties">
+            <div class="party" id="p-cardholder">
+                <div class="party-icon">👤</div>
+                <div class="party-name">Cardholder</div>
+                <div class="party-role">Alice<br>Visa •••• 4242</div>
+                <div class="cert-badge">X.509 Cert</div>
+            </div>
+            <div class="party" id="p-merchant">
+                <div class="party-icon">🏪</div>
+                <div class="party-name">Merchant</div>
+                <div class="party-role">TechStore Ltd<br>SET-enabled POS</div>
+                <div class="cert-badge">X.509 Cert</div>
+            </div>
+            <div class="party" id="p-pg">
+                <div class="party-icon">🔀</div>
+                <div class="party-name">Payment<br>Gateway</div>
+                <div class="party-role">Acquirer Gateway<br>Routes & validates</div>
+                <div class="cert-badge">X.509 Cert</div>
+            </div>
+            <div class="party" id="p-acquirer">
+                <div class="party-icon">🏦</div>
+                <div class="party-name">Acquirer Bank</div>
+                <div class="party-role">HDFC Merchant<br>Processing Bank</div>
+                <div class="cert-badge">X.509 Cert</div>
+            </div>
+            <div class="party" id="p-issuer">
+                <div class="party-icon">💳</div>
+                <div class="party-name">Issuer Bank</div>
+                <div class="party-role">Visa Card Issuer<br>Authorises payment</div>
+                <div class="cert-badge">X.509 Cert</div>
+            </div>
+        </div>
+
+        <div class="progress">
+            <div class="progress-fill" id="progress" style="width:0%"></div>
+        </div>
+
+        <div class="controls">
+            <button class="primary" id="btn-next" onclick="nextStep()">▶ Next Step</button>
+            <button id="btn-auto" onclick="autoPlay()">⟳ Auto Play</button>
+            <button onclick="resetDemo()">↺ Reset</button>
+        </div>
+
+        <div class="steps" id="steps-container"></div>
+
+        <div class="log" id="log">
+            <div class="log-title">Transaction Log</div>
+            <div id="log-entries"></div>
+        </div>
+    </div>
+
+    <script>
+        const steps = [
+            {
+                title: "Certificate Initialisation",
+                desc: "All parties obtain X.509 digital certificates from CA",
+                from: "Certification Authority", to: "All Parties",
+                detail: {
+                    packets: [
+                        {
+                            label: "Certificate Authority Issues X.509 Certs", fields: [
+                                { k: "CA Root", v: "Visa CA / MasterCard CA", cls: "blue" },
+                                { k: "Cert Format", v: "X.509 v3", cls: "blue" },
+                                { k: "Cardholder Cert", v: "C=IN,O=Visa,CN=Alice [RSA-2048 PubKey]", cls: "enc" },
+                                { k: "Merchant Cert", v: "C=IN,O=TechStore,CN=MID-9981", cls: "enc" },
+                                { k: "Gateway Cert", v: "C=IN,O=AcquirerGW,CN=GW-001", cls: "enc" },
+                                { k: "Purpose", v: "Authenticate all parties without revealing card# to merchant", cls: "green" },
+                            ]
+                        }
+                    ],
+                    tags: ["CERT", "PKI", "RSA-2048"],
+                    log: { type: "info", msg: "[INIT] CA issued X.509 certs to all 5 parties. Trust chain established." }
+                }
+            },
+            {
+                title: "Purchase Initialisation (PInitReq)",
+                desc: "Cardholder sends purchase intent to Merchant",
+                from: "Cardholder", to: "Merchant",
+                detail: {
+                    packets: [
+                        {
+                            label: "PInitReq — Purchase Initiation Request", fields: [
+                                { k: "Transaction ID", v: "TXN-" + Math.random().toString(36).substr(2, 8).toUpperCase(), cls: "blue" },
+                                { k: "Amount", v: "₹4,299.00", cls: "green" },
+                                { k: "Currency", v: "INR (356)", cls: "" },
+                                { k: "Date", v: new Date().toISOString().split('T')[0], cls: "" },
+                                { k: "Cardholder Cert", v: "[Signed X.509 cert attached]", cls: "enc" },
+                                { k: "Nonce", v: Math.random().toString(16).substr(2, 16).toUpperCase(), cls: "hash" },
+                            ]
+                        }
+                    ],
+                    tags: ["SIGNED", "CERT"],
+                    log: { type: "info", msg: "[STEP 1] Cardholder → Merchant: PInitReq sent. TXN ID generated." }
+                }
+            },
+            {
+                title: "Purchase Init Response (PInitRes)",
+                desc: "Merchant responds with its certificate and session data",
+                from: "Merchant", to: "Cardholder",
+                detail: {
+                    packets: [
+                        {
+                            label: "PInitRes — Merchant's Response", fields: [
+                                { k: "Merchant Cert", v: "[X.509 signed by Acquirer CA]", cls: "enc" },
+                                { k: "Gateway Cert", v: "[X.509 for payment routing]", cls: "enc" },
+                                { k: "Transaction ID", v: "Echo from PInitReq", cls: "blue" },
+                                { k: "Merchant ID", v: "MID-9981-TECHSTORE", cls: "" },
+                                { k: "Signature", v: "SHA-256(TXN+Certs) signed with Merchant PvtKey", cls: "hash" },
+                                { k: "Verification", v: "Cardholder verifies both certs via CA trust chain", cls: "green" },
+                            ]
+                        }
+                    ],
+                    tags: ["SIGNED", "CERT", "VERIFIED"],
+                    log: { type: "info", msg: "[STEP 2] Merchant → Cardholder: Certs exchanged. Cardholder verified merchant identity." }
+                }
+            },
+            {
+                title: "Dual Signature & Purchase Request",
+                desc: "Cardholder creates dual signature — card data hidden from merchant",
+                from: "Cardholder", to: "Merchant",
+                detail: {
+                    packets: [
+                        {
+                            label: "Dual Signature Construction (SET's Core Innovation)", fields: [
+                                { k: "Order Info (OI)", v: "Items: MacBook Air, Qty:1, ₹4299", cls: "" },
+                                { k: "Payment Info (PI)", v: "Card: 4242 4242 4242 4242, CVV:***", cls: "red" },
+                                { k: "H(OI)", v: "SHA1(OI) = a3f9...c821", cls: "hash" },
+                                { k: "H(PI)", v: "SHA1(PI) = 7bc4...d193", cls: "hash" },
+                                { k: "OIMD", v: "H(H(OI) || H(PI)) = 9e2f...4a77", cls: "hash" },
+                                { k: "Dual Sig", v: "Encrypt(OIMD, Cardholder_PvtKey)", cls: "enc" },
+                            ]
+                        },
+                        {
+                            label: "What Each Party Sees", fields: [
+                                { k: "Merchant gets", v: "OI (order details) + Dual Signature — NEVER sees card number", cls: "green" },
+                                { k: "Bank gets", v: "PI (card number) + Dual Signature — NEVER sees order details", cls: "green" },
+                                { k: "Both can verify", v: "Dual sig proves both parts came from same cardholder", cls: "blue" },
+                            ]
+                        }
+                    ],
+                    tags: ["DUAL-SIG", "SHA1", "RSA", "PRIVACY"],
+                    log: { type: "success", msg: "[STEP 3] Dual Signature created. Merchant cannot see card#. Bank cannot see order items. ✓" }
+                }
+            },
+            {
+                title: "Authorization Request to Acquirer",
+                desc: "Merchant forwards encrypted payment request through Payment Gateway",
+                from: "Merchant", to: "Payment Gateway",
+                detail: {
+                    packets: [
+                        {
+                            label: "AuthReq — Encrypted Authorization Request", fields: [
+                                { k: "Payment Info", v: "Enc(PI, Gateway_PubKey) — Merchant cannot decrypt", cls: "enc" },
+                                { k: "Order Amount", v: "₹4,299.00", cls: "green" },
+                                { k: "Dual Signature", v: "Forwarded from cardholder", cls: "hash" },
+                                { k: "Merchant Cert", v: "Merchant's X.509 credential", cls: "enc" },
+                                { k: "PIMD", v: "SHA1(PI) — for integrity check", cls: "hash" },
+                                { k: "AuthToken", v: "Merchant-signed authorization token", cls: "enc" },
+                            ]
+                        }
+                    ],
+                    tags: ["ENCRYPTED", "FORWARDED", "GATEWAY"],
+                    log: { type: "info", msg: "[STEP 4] Merchant → Gateway: Encrypted AuthReq forwarded. PI still sealed from merchant." }
+                }
+            },
+            {
+                title: "Issuer Authorization",
+                desc: "Acquirer routes to card Issuer Bank for final authorization",
+                from: "Acquirer Bank", to: "Issuer Bank",
+                detail: {
+                    packets: [
+                        {
+                            label: "FinancialReq — Sent to Issuer via VisaNet/BankNet", fields: [
+                                { k: "Card Number", v: "4242 •••• •••• 4242 (decrypted by gateway)", cls: "red" },
+                                { k: "Amount", v: "₹4,299.00", cls: "green" },
+                                { k: "Cardholder Sig", v: "Verified dual signature", cls: "enc" },
+                                { k: "CVV Check", v: "Validated", cls: "green" },
+                                { k: "Fraud Score", v: "0.04 (Low risk)", cls: "green" },
+                            ]
+                        },
+                        {
+                            label: "Issuer Response", fields: [
+                                { k: "Auth Code", v: "AUTH-" + Math.random().toString(36).substr(2, 6).toUpperCase(), cls: "green" },
+                                { k: "Response", v: "APPROVED", cls: "green" },
+                                { k: "AVS", v: "Address Verified", cls: "green" },
+                                { k: "Signed by", v: "Issuer Private Key", cls: "enc" },
+                            ]
+                        }
+                    ],
+                    tags: ["FINANCIAL-REQ", "ISSUER", "AUTHORIZED"],
+                    log: { type: "success", msg: "[STEP 5] Issuer Bank: Card verified. APPROVED. Auth code issued." }
+                }
+            },
+            {
+                title: "Authorization Response & Capture",
+                desc: "Approval flows back to merchant; merchant completes the sale",
+                from: "Payment Gateway", to: "Merchant",
+                detail: {
+                    packets: [
+                        {
+                            label: "AuthRes — Authorization Response to Merchant", fields: [
+                                { k: "Status", v: "APPROVED ✓", cls: "green" },
+                                { k: "Auth Code", v: "Forwarded from Issuer", cls: "green" },
+                                { k: "Gateway Sig", v: "SHA-256(AuthCode+TXN) signed by GW", cls: "hash" },
+                                { k: "Capture Token", v: "CAPToken for settlement", cls: "blue" },
+                            ]
+                        },
+                        {
+                            label: "CapReq — Capture / Settlement Request", fields: [
+                                { k: "Merchant Action", v: "Sends CaptureReq to Gateway", cls: "" },
+                                { k: "Funds Flow", v: "Issuer → Acquirer → Merchant (T+1)", cls: "green" },
+                                { k: "Final State", v: "Transaction SETTLED", cls: "green" },
+                            ]
+                        }
+                    ],
+                    tags: ["APPROVED", "CAPTURED", "SETTLED"],
+                    log: { type: "success", msg: "[STEP 6] Transaction APPROVED & CAPTURED. Funds will settle T+1. ✓" }
+                }
+            },
+        ];
+
+        let current = -1;
+        let autoTimer = null;
+
+        const partyMap = {
+            "Cardholder": "p-cardholder", "Merchant": "p-merchant",
+            "Payment Gateway": "p-pg", "Acquirer Bank": "p-acquirer", "Issuer Bank": "p-issuer"
+        };
+
+        function init() {
+            const c = document.getElementById('steps-container');
+            c.innerHTML = '';
+            steps.forEach((s, i) => {
+                c.innerHTML += `<div class="step" id="step-${i}" onclick="goStep(${i})">
+      <div class="step-header">
+        <div class="step-num">${i + 1}</div>
+        <div>
+          <div class="step-title">${s.title}</div>
+          <div class="step-desc">${s.desc}</div>
+        </div>
+      </div>
+      <div class="step-detail" id="detail-${i}"></div>
+    </div>`;
+            });
+        }
+
+        function goStep(i) {
+            if (i > current + 1) return;
+            current = i;
+            updateUI();
+        }
+
+        function nextStep() {
+            if (current >= steps.length - 1) return;
+            current++;
+            updateUI();
+        }
+
+        function updateUI() {
+            const pct = ((current + 1) / steps.length * 100).toFixed(0);
+            document.getElementById('progress').style.width = pct + '%';
+            document.getElementById('btn-next').disabled = current >= steps.length - 1;
+
+            Object.values(partyMap).forEach(id => document.getElementById(id).classList.remove('active'));
+            const s = steps[current];
+            if (partyMap[s.from]) document.getElementById(partyMap[s.from]).classList.add('active');
+            if (partyMap[s.to]) document.getElementById(partyMap[s.to]).classList.add('active');
+
+            steps.forEach((_, i) => {
+                const el = document.getElementById('step-' + i);
+                el.classList.remove('active', 'done');
+                if (i === current) el.classList.add('active');
+                if (i < current) el.classList.add('done');
+            });
+
+            const d = steps[current].detail;
+            const det = document.getElementById('detail-' + current);
+            let html = '';
+            d.tags.forEach(t => html += `<span class="tag tag-enc">${t}</span>`);
+            html += '<br><br>';
+            d.packets.forEach(p => {
+                html += `<div class="packet"><div class="packet-label">${p.label}</div>`;
+                p.fields.forEach(f => {
+                    html += `<div class="field"><span class="key">${f.k}</span><span class="val ${f.cls || ''}">${f.v}</span></div>`;
+                });
+                html += '</div>';
+            });
+            det.innerHTML = html;
+
+            const le = document.getElementById('log-entries');
+            const e = d.log;
+            le.innerHTML = `<div class="log-entry ${e.type}">${e.msg}</div>` + le.innerHTML;
+        }
+
+        function autoPlay() {
+            if (autoTimer) { clearInterval(autoTimer); autoTimer = null; document.getElementById('btn-auto').textContent = '⟳ Auto Play'; return; }
+            document.getElementById('btn-auto').textContent = '⏹ Stop';
+            autoTimer = setInterval(() => {
+                if (current >= steps.length - 1) { clearInterval(autoTimer); autoTimer = null; document.getElementById('btn-auto').textContent = '⟳ Auto Play'; return; }
+                nextStep();
+            }, 2200);
+        }
+
+        function resetDemo() {
+            if (autoTimer) { clearInterval(autoTimer); autoTimer = null; document.getElementById('btn-auto').textContent = '⟳ Auto Play'; }
+            current = -1;
+            document.getElementById('progress').style.width = '0%';
+            document.getElementById('btn-next').disabled = false;
+            Object.values(partyMap).forEach(id => document.getElementById(id).classList.remove('active'));
+            document.getElementById('log-entries').innerHTML = '';
+            init();
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
